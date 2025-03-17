@@ -1,0 +1,41 @@
+name: user_maternityapp
+description: "A new Flutter project."
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: ^3.6.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  firebase_core: ^3.10.1
+  lottie: ^3.3.1
+  supabase_flutter: ^2.8.3
+  syncfusion_flutter_gauges: ^28.2.6
+  google_fonts: ^6.2.1
+  table_calendar: ^3.2.0
+  flutter_svg: ^2.0.17
+  intl: ^0.20.2
+  image_picker: ^1.1.2
+  video_player: ^2.9.3
+  chewie: ^1.10.0
+  fl_chart: ^0.70.2
+  shadcn_ui: ^0.0.0
+  timeago: ^3.2.2
+  cached_network_image: ^3.4.1
+  timeline_tile: ^2.0.0
+  flutter_credit_card: ^4.1.0
+  luhn: ^1.0.1
+  confetti: ^0.8.0
+  flutter_rating_bar: ^4.0.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/

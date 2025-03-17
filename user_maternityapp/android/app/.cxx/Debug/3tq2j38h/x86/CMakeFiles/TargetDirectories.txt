@@ -1,0 +1,2 @@
+C:/Projects/Maternity-App-Flutter/Project/user_maternityapp/android/app/.cxx/Debug/3tq2j38h/x86/CMakeFiles/edit_cache.dir
+C:/Projects/Maternity-App-Flutter/Project/user_maternityapp/android/app/.cxx/Debug/3tq2j38h/x86/CMakeFiles/rebuild_cache.dir
