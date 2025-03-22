@@ -145,12 +145,12 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
           ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.delete, color: Colors.white),
-            onPressed: () {
-              _showDeleteConfirmation(context);
-            },
-          ),
+          // IconButton(
+          //   icon: const Icon(Icons.delete, color: Colors.white),
+          //   onPressed: () {
+          //     _showDeleteConfirmation(context);
+          //   },
+          // ),
         ],
       ),
       body: SingleChildScrollView(
@@ -851,51 +851,51 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
   }
 
   // Delete confirmation dialog
-  void _showDeleteConfirmation(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          "Delete Product",
-          style: GoogleFonts.sanchez(
-            fontWeight: FontWeight.bold,
-            color: const Color(0xFF333333),
-          ),
-        ),
-        content: Text(
-          "Are you sure you want to delete '${widget.product['product_name']}'?",
-          style: GoogleFonts.sanchez(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              "Cancel",
-              style: GoogleFonts.sanchez(color: Colors.grey[700]),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context); // Close dialog
-              Navigator.pop(context); // Return to previous screen
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Product deleted successfully")),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Text(
-              "Delete",
-              style: GoogleFonts.sanchez(),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // void _showDeleteConfirmation(BuildContext context) {
+  //   showDialog(
+  //     context: context,
+  //     builder: (context) => AlertDialog(
+  //       title: Text(
+  //         "Delete Product",
+  //         style: GoogleFonts.sanchez(
+  //           fontWeight: FontWeight.bold,
+  //           color: const Color(0xFF333333),
+  //         ),
+  //       ),
+  //       content: Text(
+  //         "Are you sure you want to delete '${widget.product['product_name']}'?",
+  //         style: GoogleFonts.sanchez(),
+  //       ),
+  //       actions: [
+  //         TextButton(
+  //           onPressed: () => Navigator.pop(context),
+  //           child: Text(
+  //             "Cancel",
+  //             style: GoogleFonts.sanchez(color: Colors.grey[700]),
+  //           ),
+  //         ),
+  //         // ElevatedButton(
+  //         //   onPressed: () {
+  //         //     Navigator.pop(context); // Close dialog
+  //         //     Navigator.pop(context); // Return to previous screen
+  //         //     ScaffoldMessenger.of(context).showSnackBar(
+  //         //       const SnackBar(content: Text("Product deleted successfully")),
+  //         //     );
+  //         //   },
+  //         //   style: ElevatedButton.styleFrom(
+  //         //     backgroundColor: Colors.red,
+  //         //     foregroundColor: Colors.white,
+  //         //     shape: RoundedRectangleBorder(
+  //         //       borderRadius: BorderRadius.circular(8),
+  //         //     ),
+  //         //   ),
+  //         //   child: Text(
+  //         //     "Delete",
+  //         //     style: GoogleFonts.sanchez(),
+  //         //   ),
+  //         // ),
+  //       ],
+  //     ),
+  //   );
+  // }
 }

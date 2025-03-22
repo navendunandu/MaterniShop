@@ -8,6 +8,7 @@ import 'package:admin_maternityapp/screen/place.dart';
 import 'package:admin_maternityapp/screen/rejected_shops.dart';
 import 'package:admin_maternityapp/screen/subcategory.dart';
 import 'package:admin_maternityapp/screen/verified_shops.dart';
+import 'package:admin_maternityapp/screen/viewcomplaint.dart';
 import 'package:flutter/material.dart';
 
 class Homepage extends StatefulWidget {
@@ -22,20 +23,21 @@ class _HomepageState extends State<Homepage> {
 
   List<String> pageName = [
     'Dashboard', 'District', 'Category', 'Place', 'Sub Category',
-    'Exercises', 'Diet Plan', 'New Shops', 'Verified Shops', 'Rejected Shops'
+    'Exercises', 'Diet Plan', 'New Shops', 'Verified Shops', 'Rejected Shops',
+    'Compalints'
   ];
 
   List<IconData> pageIcon = [
     Icons.dashboard_outlined, Icons.location_city_outlined, Icons.category_outlined,
     Icons.location_city, Icons.category_outlined, Icons.fitness_center_outlined,
     Icons.fastfood_outlined, Icons.store_outlined, Icons.store_mall_directory_outlined,
-    Icons.store_outlined
+    Icons.store_outlined,Icons.report_rounded, 
   ];
 
   List<Widget> pages = [
     Dashboard(), ManageDistrict(), ManageCategory(), ManagePlace(), 
     ManageSubCategory(), ManageExercise(), ManageDietplan(), 
-    ManageNewShop(), ManageVerifiedShop(), ManageRejectedShop()
+    ManageNewShop(), ManageVerifiedShop(), ManageRejectedShop(),ComplaintScreen()
   ];
 
   @override

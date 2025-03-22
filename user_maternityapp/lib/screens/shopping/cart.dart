@@ -386,25 +386,6 @@ class _CartPageState extends State<CartPage> {
                               ],
                             ),
                             SizedBox(height: 8),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  "Shipping",
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.grey[700],
-                                  ),
-                                ),
-                                Text(
-                                  "₹50.00",
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
                             Padding(
                               padding: EdgeInsets.symmetric(vertical: 16),
                               child: Divider(),
@@ -420,7 +401,7 @@ class _CartPageState extends State<CartPage> {
                                   ),
                                 ),
                                 Text(
-                                  "₹${(getTotalPrice() + 50).toStringAsFixed(2)}",
+                                  "₹${(getTotalPrice()).toStringAsFixed(2)}",
                                   style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
@@ -435,10 +416,11 @@ class _CartPageState extends State<CartPage> {
                               height: 54,
                               child: ElevatedButton(
                                 onPressed: cartItems.isEmpty ? null : () {
+                                  int total = getTotalPrice().toInt();
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => PaymentGatewayScreen(id: bid! ),
+                                      builder: (context) => PaymentGatewayScreen(id: bid!, amt: total, ),
                                     ),
                                   );
                                 },

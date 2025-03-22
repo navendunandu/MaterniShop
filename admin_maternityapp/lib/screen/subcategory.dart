@@ -55,7 +55,7 @@ class _ManageSubCategoryState extends State<ManageSubCategory> {
 
   Future<void> delete(int id) async {
     try {
-      await supabase.from('tbl_subcategory').delete().eq('subcategory_id', id);
+      await supabase.from('tbl_subcategory').delete().eq('id', id);
       fetchData();
     } catch (e) {
       print("Error Deleting: $e");
@@ -67,7 +67,7 @@ class _ManageSubCategoryState extends State<ManageSubCategory> {
       await supabase.from('tbl_subcategory').update({
         'subcategory_name': _subcategoryController.text,
         'category_id':selectedCategory,
-      }).eq('subcategory_id', eid);
+      }).eq('id', eid);
       fetchData();
       _subcategoryController.clear();
       setState(() {

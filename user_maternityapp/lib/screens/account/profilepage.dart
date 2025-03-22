@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:user_maternityapp/main.dart';
 import 'package:intl/intl.dart';
+import 'package:user_maternityapp/screens/account/auth_page.dart';
 import 'package:user_maternityapp/screens/account/change_password.dart';
 import 'package:user_maternityapp/screens/account/editprofile.dart';
 import 'package:user_maternityapp/screens/shopping/my_order.dart';
@@ -86,7 +87,7 @@ class _ProfilePageState extends State<ProfilePage> {
               child: Text('Logout', style: TextStyle(color: Colors.blue[400])),
               onPressed: () async {
                 await supabase.auth.signOut();
-                Navigator.of(context).pushReplacementNamed('/login');
+                Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => AuthPage()));
               },
             ),
           ],

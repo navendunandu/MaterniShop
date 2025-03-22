@@ -5,7 +5,8 @@ import 'package:user_maternityapp/screens/payment/success.dart';
 
 class PaymentGatewayScreen extends StatefulWidget {
   final int id;
-  const PaymentGatewayScreen({super.key, required this.id});
+  final int amt;
+  const PaymentGatewayScreen({super.key, required this.id, required this.amt});
 
   @override
   _PaymentGatewayScreenState createState() => _PaymentGatewayScreenState();
@@ -20,7 +21,7 @@ class _PaymentGatewayScreenState extends State<PaymentGatewayScreen> {
           .update({'cart_status': 1}).eq('booking_id', widget.id);
       await supabase
           .from('tbl_booking')
-          .update({'booking_status': 1}).eq('id', widget.id);
+          .update({'booking_status': 1, 'booking_amount': widget.amt}).eq('id', widget.id);
           Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => PaymentSuccessPage(),));
     } catch (e) {
       print(e);

@@ -19,7 +19,7 @@ class _BookingManagementPageState extends State<BookingManagementPage> {
   Future<void> fetchBookings() async {
     try {
       final response =
-          await supabase.from('tbl_booking').select("*, tbl_user(*)");
+          await supabase.from('tbl_booking').select("*, tbl_user(*)").eq('booking_status', 1);
       List<Map<String, dynamic>> items = [];
       for (var row in response) {
         // Parse the created_at timestamp
@@ -54,65 +54,6 @@ class _BookingManagementPageState extends State<BookingManagementPage> {
     // TODO: implement initState
     super.initState();
     fetchBookings();
-  }
-
-  final List<Map<String, dynamic>> _bookings = [
-    {
-      'id': '1',
-      'customerName': 'Emma Johnson',
-      'service': 'Maternity Photoshoot',
-      'date': DateTime.now().add(Duration(days: 2)),
-      'time': '10:00 AM',
-      'duration': '1 hour',
-      'status': 'Confirmed',
-      'notes': 'Customer prefers outdoor setting',
-      'phone': '+1 (555) 123-4567',
-      'email': 'emma.j@example.com',
-    },
-    {
-      'id': '2',
-      'customerName': 'Sophia Williams',
-      'service': 'Prenatal Consultation',
-      'date': DateTime.now().add(Duration(days: 3)),
-      'time': '2:30 PM',
-      'duration': '45 minutes',
-      'status': 'Pending',
-      'notes': 'First-time mother, has questions about maternity clothing',
-      'phone': '+1 (555) 234-5678',
-      'email': 'sophia.w@example.com',
-    },
-    {
-      'id': '3',
-      'customerName': 'Olivia Brown',
-      'service': 'Product Fitting',
-      'date': DateTime.now().add(Duration(days: 5)),
-      'time': '11:15 AM',
-      'duration': '30 minutes',
-      'status': 'Confirmed',
-      'notes': 'Looking for maternity support belt',
-      'phone': '+1 (555) 345-6789',
-      'email': 'olivia.b@example.com',
-    },
-    {
-      'id': '4',
-      'customerName': 'Ava Miller',
-      'service': 'Nutrition Consultation',
-      'date': DateTime.now().add(Duration(days: 7)),
-      'time': '3:00 PM',
-      'duration': '1 hour',
-      'status': 'Cancelled',
-      'notes': 'Cancelled due to illness',
-      'phone': '+1 (555) 456-7890',
-      'email': 'ava.m@example.com',
-    },
-  ];
-
-  List<Map<String, dynamic>> get _filteredBookings {
-    if (_selectedDay == null) return _bookings;
-
-    return _bookings.where((booking) {
-      return isSameDay(booking['date'], _selectedDay);
-    }).toList();
   }
 
   @override
@@ -349,41 +290,6 @@ class _BookingManagementPageState extends State<BookingManagementPage> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  void _showCancelBookingDialog(
-      BuildContext context, Map<String, dynamic> booking) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Cancel Booking"),
-        content: Text(
-            "Are you sure you want to cancel the booking for ${booking['customerName']}?"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text("No"),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              setState(() {
-                final index =
-                    _bookings.indexWhere((b) => b['id'] == booking['id']);
-                if (index != -1) {
-                  _bookings[index]['status'] = 'Cancelled';
-                }
-              });
-              Navigator.pop(context);
-            },
-            child: Text("Yes, Cancel"),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-            ),
-          ),
-        ],
       ),
     );
   }

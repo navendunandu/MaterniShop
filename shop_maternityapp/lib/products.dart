@@ -120,6 +120,15 @@ class _ProductManagementPageState extends State<ProductManagementPage> {
     }
   }
 
+  Future<void> deleteProduct(String id) async {
+    try {
+      await supabase.from("tbl_product").delete().eq('product_id', id);
+      fetchProduct();
+    } catch (e) {
+      print("Error deleting product: $e");
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -302,6 +311,7 @@ class _ProductManagementPageState extends State<ProductManagementPage> {
                     
                     onPressed: () {
                       // _showDeleteConfirmation(context, product);
+                      deleteProduct(product['product_id'].toString());
                     },
                     icon: Icon(Icons.delete, size: 16),
                     label: Text("Delete"),
@@ -500,33 +510,31 @@ class _ProductManagementPageState extends State<ProductManagementPage> {
     );
   }
 
-  void _showDeleteConfirmation(
-      BuildContext context, Map<String, dynamic> product) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Delete Product"),
-        content: Text("Are you sure you want to delete '${product['name']}'?"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text("Cancel"),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              setState(() {
-                _products.removeWhere((p) => p['id'] == product['id']);
-              });
-              Navigator.pop(context);
-            },
-            child: Text("Delete"),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // void _showDeleteConfirmation(
+  //     BuildContext context, Map<String, dynamic> product) {
+  //   showDialog(
+  //     context: context,
+  //     builder: (context) => AlertDialog(
+  //       title: Text("Delete Product"),
+  //       content: Text("Are you sure you want to delete '${product['name']}'?"),
+  //       actions: [
+  //         TextButton(
+  //           onPressed: () => Navigator.pop(context),
+  //           child: Text("Cancel"),
+  //         ),
+  //         // ElevatedButton(
+  //         //   onPressed: () {
+  //         //      deleteProduct(product['product_id'].toString());
+  //         //     Navigator.pop(context);
+  //         //   },
+  //         //   child: Text("Delete"),
+  //         //   style: ElevatedButton.styleFrom(
+  //         //     backgroundColor: Colors.red,
+  //         //     foregroundColor: Colors.white,
+  //         //   ),
+  //         // ),
+  //       ],
+  //     ),
+  //   );
+  // }
 }

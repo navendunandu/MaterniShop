@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:shop_maternityapp/login.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -202,13 +203,14 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),),
                     TextButton(
                       onPressed: () {
-                        // Navigate to Login Page
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => LoginPage(),));
                       },
                       child: Text(
                         'Login',
                        style: GoogleFonts.sanchez(
                     fontSize: 16,
                     color: Color.fromARGB(255, 138, 101, 202),
+                    
                   ),
                         ),
                       ),

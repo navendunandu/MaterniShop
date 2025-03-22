@@ -21,7 +21,7 @@ class _DashboardPageState extends State<DashboardPage> {
     DashboardHomeTab(),
     ProductManagementPage(),
     BookingManagementPage(),
-    ComplaintsPage(),
+    ComplaintsPage( ),
     AccountManagementPage(),
   ];
   

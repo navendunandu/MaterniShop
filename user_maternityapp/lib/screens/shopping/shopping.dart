@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:user_maternityapp/screens/shopping/cart.dart';
 import 'package:user_maternityapp/screens/shopping/product_details.dart';
+import 'package:user_maternityapp/screens/shopping/wishlist.dart';
 
 class ShoppingPage extends StatefulWidget {
   const ShoppingPage({super.key});
@@ -136,6 +137,7 @@ class _ShoppingPageState extends State<ShoppingPage> {
                   Navigator.push(context, MaterialPageRoute(builder: (context) => CartPage()));
                 },
               ),
+              
               // Positioned(
               //   top: 8,
               //   right: 8,
@@ -156,6 +158,12 @@ class _ShoppingPageState extends State<ShoppingPage> {
               //   ),
               // ),
             ],
+          ),
+          IconButton(
+            icon: Icon(Icons.favorite),
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => Wishlist(),));
+            },
           ),
         ],
       ),

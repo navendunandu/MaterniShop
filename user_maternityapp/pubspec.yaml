@@ -29,6 +29,9 @@ dependencies:
   luhn: ^1.0.1
   confetti: ^0.8.0
   flutter_rating_bar: ^4.0.1
+  pdf: ^3.11.3
+  path_provider: ^2.1.5
+  open_file: ^3.5.10
 
 dev_dependencies:
   flutter_test:

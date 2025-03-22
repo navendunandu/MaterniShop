@@ -34,6 +34,7 @@ class _ProductPageState extends State<ProductPage> {
     super.initState();
     fetchProductDetails();
     fetchReviews();
+    _checkWishlistStatus();
   }
 
   Future<void> fetchProductDetails() async {
@@ -79,24 +80,22 @@ class _ProductPageState extends State<ProductPage> {
           .from('tbl_review')
           .select()
           .eq('product_id', widget.productId);
-      
+
       final reviewsList = List<Map<String, dynamic>>.from(response);
-      
-      // Calculate average rating
       double totalRating = 0;
       for (var review in reviewsList) {
         totalRating += double.parse(review['review_rating'].toString());
       }
-      
-      double avgRating = reviewsList.isNotEmpty ? totalRating / reviewsList.length : 0;
-      
+
+      double avgRating =
+          reviewsList.isNotEmpty ? totalRating / reviewsList.length : 0;
+
       setState(() {
         reviews = reviewsList;
         averageRating = avgRating;
         reviewCount = reviewsList.length;
       });
-      
-      // Fetch user names for each review
+
       for (var review in reviews) {
         final userId = review['user_id'];
         if (userId != null) {
@@ -105,7 +104,7 @@ class _ProductPageState extends State<ProductPage> {
               .select('user_name')
               .eq('id', userId)
               .single();
-          
+
           setState(() {
             userNames[userId] = userResponse['user_name'] ?? 'Anonymous';
           });
@@ -113,6 +112,62 @@ class _ProductPageState extends State<ProductPage> {
       }
     } catch (e) {
       print('Error fetching reviews: $e');
+    }
+  }
+
+  bool _isWishlisted = false;
+
+  Future<void> _checkWishlistStatus() async {
+    try {
+      final userId = supabase.auth.currentUser?.id;
+      final response = await supabase
+          .from('tbl_wishlist')
+          .select()
+          .eq('product_id', widget.productId)
+          .eq('user_id', userId!)
+          .maybeSingle();
+
+      setState(() {
+        _isWishlisted = response != null;
+      });
+    } catch (e) {
+      print('Error checking wishlist: $e');
+    }
+  }
+
+  Future<void> _toggleWishlist() async {
+    try {
+      final userId = supabase.auth.currentUser?.id;
+      if (_isWishlisted) {
+        await supabase
+            .from('tbl_wishlist')
+            .delete()
+            .eq('product_id', widget.productId)
+            .eq('user_id', userId!);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Removed from wishlist')),
+        );
+      } else {
+        // Add to wishlist
+        await supabase.from('tbl_wishlist').insert({
+          'product_id': widget.productId,
+          'user_id': userId!,
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Added to wishlist')),
+        );
+      }
+
+      setState(() {
+        _isWishlisted = !_isWishlisted;
+      });
+    } catch (e) {
+      print('Error toggling wishlist: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error updating wishlist')),
+      );
     }
   }
 
@@ -125,7 +180,8 @@ class _ProductPageState extends State<ProductPage> {
         backgroundColor: Colors.white,
         title: Text(
           product?['product_name'] ?? "Loading...",
-          style: TextStyle(color: Color(0xFF333333), fontWeight: FontWeight.w600),
+          style:
+              TextStyle(color: Color(0xFF333333), fontWeight: FontWeight.w600),
         ),
         iconTheme: IconThemeData(color: Color(0xFF333333)),
         actions: [
@@ -152,14 +208,16 @@ class _ProductPageState extends State<ProductPage> {
                             height: 300,
                             width: double.infinity,
                             child: Image.network(
-                              product?['product_image'] ?? 'https://via.placeholder.com/300',
+                              product?['product_image'] ??
+                                  'https://via.placeholder.com/300',
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) =>
                                   Container(
-                                    height: 300,
-                                    color: Colors.grey[200],
-                                    child: Icon(Icons.broken_image, size: 100, color: Colors.grey),
-                                  ),
+                                height: 300,
+                                color: Colors.grey[200],
+                                child: Icon(Icons.broken_image,
+                                    size: 100, color: Colors.grey),
+                              ),
                             ),
                           ),
                           Positioned(
@@ -172,7 +230,10 @@ class _ProductPageState extends State<ProductPage> {
                                 gradient: LinearGradient(
                                   begin: Alignment.topCenter,
                                   end: Alignment.bottomCenter,
-                                  colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
+                                  colors: [
+                                    Colors.transparent,
+                                    Colors.black.withOpacity(0.7)
+                                  ],
                                 ),
                               ),
                             ),
@@ -181,20 +242,26 @@ class _ProductPageState extends State<ProductPage> {
                             bottom: 16,
                             right: 16,
                             child: Container(
-                              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 6),
                               decoration: BoxDecoration(
-                                color: remaining! <= 0 ? Colors.red : Colors.green,
+                                color:
+                                    remaining! <= 0 ? Colors.red : Colors.green,
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
-                                remaining! <= 0 ? 'Out of Stock' : '${remaining} in stock',
-                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                remaining! <= 0
+                                    ? 'Out of Stock'
+                                    : '${remaining} in stock',
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold),
                               ),
                             ),
                           ),
                         ],
                       ),
-                      
+
                       // Product Details Card
                       Container(
                         padding: EdgeInsets.all(20),
@@ -224,7 +291,7 @@ class _ProductPageState extends State<ProductPage> {
                               ),
                             ),
                             SizedBox(height: 8),
-                            
+
                             // Average Rating
                             Row(
                               children: [
@@ -247,7 +314,7 @@ class _ProductPageState extends State<ProductPage> {
                                 ),
                               ],
                             ),
-                            
+
                             SizedBox(height: 16),
                             Text(
                               "₹${product?['product_price'] ?? 'N/A'}",
@@ -268,7 +335,8 @@ class _ProductPageState extends State<ProductPage> {
                             ),
                             SizedBox(height: 8),
                             Text(
-                              product?['product_description'] ?? 'No details available',
+                              product?['product_description'] ??
+                                  'No details available',
                               style: TextStyle(
                                 fontSize: 16,
                                 color: Color(0xFF666666),
@@ -276,7 +344,7 @@ class _ProductPageState extends State<ProductPage> {
                               ),
                             ),
                             SizedBox(height: 24),
-                            
+
                             // Add to Cart Button
                             SizedBox(
                               width: double.infinity,
@@ -285,7 +353,8 @@ class _ProductPageState extends State<ProductPage> {
                                 onPressed: remaining! <= 0
                                     ? null
                                     : () {
-                                        addItemToCart(context, product?['product_id']);
+                                        addItemToCart(
+                                            context, product?['product_id']);
                                       },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Color(0xFF64B5F6),
@@ -297,7 +366,9 @@ class _ProductPageState extends State<ProductPage> {
                                   ),
                                 ),
                                 child: Text(
-                                  remaining! <= 0 ? "Out of Stock" : "Add to Cart",
+                                  remaining! <= 0
+                                      ? "Out of Stock"
+                                      : "Add to Cart",
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
@@ -305,10 +376,20 @@ class _ProductPageState extends State<ProductPage> {
                                 ),
                               ),
                             ),
+
+                            SizedBox(height: 16),
+                            IconButton(
+                              onPressed: _toggleWishlist,
+                              icon: Icon(
+                                Icons.favorite,
+                                color: _isWishlisted ? Colors.red : Colors.grey,
+                                size: 30,
+                              ),
+                            ),
                           ],
                         ),
                       ),
-                      
+
                       // Reviews Section
                       Container(
                         padding: EdgeInsets.all(20),
@@ -324,7 +405,7 @@ class _ProductPageState extends State<ProductPage> {
                               ),
                             ),
                             SizedBox(height: 16),
-                            
+
                             // Reviews List
                             reviews.isEmpty
                                 ? Container(
@@ -353,46 +434,58 @@ class _ProductPageState extends State<ProductPage> {
                                 : Column(
                                     children: reviews.map((review) {
                                       final userId = review['user_id'];
-                                      final userName = userNames[userId] ?? 'Anonymous';
-                                      final rating = double.parse(review['review_rating'].toString());
-                                      
+                                      final userName =
+                                          userNames[userId] ?? 'Anonymous';
+                                      final rating = double.parse(
+                                          review['review_rating'].toString());
+
                                       return Container(
                                         margin: EdgeInsets.only(bottom: 16),
                                         padding: EdgeInsets.all(16),
                                         decoration: BoxDecoration(
                                           color: Colors.white,
-                                          borderRadius: BorderRadius.circular(10),
+                                          borderRadius:
+                                              BorderRadius.circular(10),
                                           boxShadow: [
                                             BoxShadow(
-                                              color: Colors.black.withOpacity(0.05),
+                                              color: Colors.black
+                                                  .withOpacity(0.05),
                                               blurRadius: 10,
                                               offset: Offset(0, 5),
                                             ),
                                           ],
                                         ),
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Row(
                                               children: [
                                                 CircleAvatar(
-                                                  backgroundColor: Color(0xFF64B5F6).withOpacity(0.2),
+                                                  backgroundColor:
+                                                      Color(0xFF64B5F6)
+                                                          .withOpacity(0.2),
                                                   child: Text(
-                                                    userName.substring(0, 1).toUpperCase(),
+                                                    userName
+                                                        .substring(0, 1)
+                                                        .toUpperCase(),
                                                     style: TextStyle(
                                                       color: Color(0xFF64B5F6),
-                                                      fontWeight: FontWeight.bold,
+                                                      fontWeight:
+                                                          FontWeight.bold,
                                                     ),
                                                   ),
                                                 ),
                                                 SizedBox(width: 12),
                                                 Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
                                                   children: [
                                                     Text(
                                                       userName,
                                                       style: TextStyle(
-                                                        fontWeight: FontWeight.bold,
+                                                        fontWeight:
+                                                            FontWeight.bold,
                                                         fontSize: 16,
                                                       ),
                                                     ),
@@ -400,7 +493,8 @@ class _ProductPageState extends State<ProductPage> {
                                                     Text(
                                                       '${DateTime.parse(review['created_at']).toLocal().toString().split(' ')[0]}',
                                                       style: TextStyle(
-                                                        color: Color(0xFF999999),
+                                                        color:
+                                                            Color(0xFF999999),
                                                         fontSize: 12,
                                                       ),
                                                     ),
@@ -408,24 +502,32 @@ class _ProductPageState extends State<ProductPage> {
                                                 ),
                                                 Spacer(),
                                                 Container(
-                                                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                  padding: EdgeInsets.symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 4),
                                                   decoration: BoxDecoration(
-                                                    color: Color(0xFF64B5F6).withOpacity(0.1),
-                                                    borderRadius: BorderRadius.circular(20),
+                                                    color: Color(0xFF64B5F6)
+                                                        .withOpacity(0.1),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            20),
                                                   ),
                                                   child: Row(
                                                     children: [
                                                       Icon(
                                                         Icons.star,
                                                         size: 16,
-                                                        color: Color(0xFFFFD700),
+                                                        color:
+                                                            Color(0xFFFFD700),
                                                       ),
                                                       SizedBox(width: 4),
                                                       Text(
                                                         rating.toString(),
                                                         style: TextStyle(
-                                                          fontWeight: FontWeight.bold,
-                                                          color: Color(0xFF333333),
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          color:
+                                                              Color(0xFF333333),
                                                         ),
                                                       ),
                                                     ],
@@ -438,10 +540,12 @@ class _ProductPageState extends State<ProductPage> {
                                               padding: EdgeInsets.all(12),
                                               decoration: BoxDecoration(
                                                 color: Color(0xFFF8F9FA),
-                                                borderRadius: BorderRadius.circular(8),
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
                                               ),
                                               child: Text(
-                                                review['review_content'] ?? 'No comment',
+                                                review['review_content'] ??
+                                                    'No comment',
                                                 style: TextStyle(
                                                   color: Color(0xFF666666),
                                                   height: 1.5,

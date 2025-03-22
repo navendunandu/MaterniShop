@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:user_maternityapp/main.dart';
 import 'package:user_maternityapp/screens/shopping/order_details.dart';
@@ -26,15 +25,14 @@ class _OrdersPageState extends State<OrdersPage> {
       final user = supabase.auth.currentUser;
       if (user == null) return;
 
-      // Fetch the user's active booking
-      final booking = await supabase
+      // Fetch all active bookings for the user
+      final bookings = await supabase
           .from('tbl_booking')
           .select('id')
           .eq('user_id', user.id)
-          .eq('booking_status', 1)
-          .maybeSingle();
+          .eq('booking_status', 1);
 
-      if (booking == null) {
+      if (bookings.isEmpty) {
         setState(() {
           cartProducts = [];
           isLoading = false;
@@ -42,29 +40,35 @@ class _OrdersPageState extends State<OrdersPage> {
         return;
       }
 
-      final cartResponse = await supabase
-          .from('tbl_cart')
-          .select('*')
-          .eq('booking_id', booking['id']);
-
+      // List to store all products across bookings
       List<Map<String, dynamic>> products = [];
-      for (var cartItem in cartResponse) {
-        final productResponse = await supabase
-            .from('tbl_product')
-            .select('product_name, product_image, product_price')
-            .eq('product_id', cartItem['product_id'])
-            .maybeSingle();
 
-        if (productResponse != null) {
-          products.add({
-            "id": cartItem['id'],
-            "order_id": cartItem['booking_id'],
-            "product_id": cartItem['product_id'],
-            "name": productResponse['product_name'],
-            "image": productResponse['product_image'],
-            "price": productResponse['product_price'],
-            "quantity": cartItem['cart_qty'],
-          });
+      // Loop through each booking
+      for (var booking in bookings) {
+        final cartResponse = await supabase
+            .from('tbl_cart')
+            .select('*')
+            .eq('booking_id', booking['id']);
+
+        // Fetch product details for each cart item
+        for (var cartItem in cartResponse) {
+          final productResponse = await supabase
+              .from('tbl_product')
+              .select('product_name, product_image, product_price')
+              .eq('product_id', cartItem['product_id'])
+              .maybeSingle();
+
+          if (productResponse != null) {
+            products.add({
+              "id": cartItem['id'],
+              "order_id": cartItem['booking_id'],
+              "product_id": cartItem['product_id'],
+              "name": productResponse['product_name'],
+              "image": productResponse['product_image'],
+              "price": productResponse['product_price'],
+              "quantity": cartItem['cart_qty'],
+            });
+          }
         }
       }
 
@@ -102,10 +106,18 @@ class _OrdersPageState extends State<OrdersPage> {
                     var product = cartProducts[index];
                     return InkWell(
                       onTap: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => OrderDetailsPage(orderId: product['order_id'],cartId: product['id'],)));
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => OrderDetailsPage(
+                              orderId: product['order_id'],
+                              cartId: product['id'],
+                            ),
+                          ),
+                        );
                       },
                       child: Container(
-                        margin: EdgeInsets.only(bottom: 16),
+                        margin: EdgeInsets.only(bottom: 16), // Note: 'bottom' might be intended here
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(16),
@@ -141,7 +153,6 @@ class _OrdersPageState extends State<OrdersPage> {
                                 ),
                               ),
                               SizedBox(width: 16),
-                      
                               // Product Details
                               Expanded(
                                 child: Column(
@@ -166,7 +177,6 @@ class _OrdersPageState extends State<OrdersPage> {
                                       ),
                                     ),
                                     SizedBox(height: 8),
-                      
                                     // Quantity
                                     Text(
                                       "Quantity: ${product['quantity']}",
