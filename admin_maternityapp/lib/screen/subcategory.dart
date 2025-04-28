@@ -16,20 +16,42 @@ class _ManageSubCategoryState extends State<ManageSubCategory> {
   int eid = 0;
 
   Future<void> insert() async {
-    try {
-      await supabase.from("tbl_subcategory").insert({
-        'subcategory_name': _subcategoryController.text,
-        'category_id': selectedCategory,
-      });
-      _subcategoryController.clear();
-      fetchData();
+  String subcategoryName = _subcategoryController.text.trim();
+
+  if (subcategoryName.isEmpty || selectedCategory == null) return;
+
+  try {
+    // Check if subcategory already exists in the selected category
+    final existingSubcategories = await supabase
+        .from("tbl_subcategory")
+        .select("subcategory_name")
+        .eq("subcategory_name", subcategoryName)
+        .eq("category_id", selectedCategory!);
+
+    if (existingSubcategories.isNotEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("SubCategory Added Successfully")),
+        const SnackBar(content: Text("SubCategory already exists in this category!")),
       );
-    } catch (e) {
-      print("Error Inserting SubCategory: $e");
+      return;
     }
+
+    // Insert new subcategory
+    await supabase.from("tbl_subcategory").insert({
+      'subcategory_name': subcategoryName,
+      'category_id': selectedCategory,
+    });
+
+    _subcategoryController.clear();
+    fetchData();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("SubCategory Added Successfully")),
+    );
+  } catch (e) {
+    print("Error Inserting SubCategory: $e");
   }
+}
+
 
   Future<void> fetchData() async {
     try {

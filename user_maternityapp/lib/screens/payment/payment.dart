@@ -45,7 +45,7 @@ class _PaymentGatewayScreenState extends State<PaymentGatewayScreen> {
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.deepPurple, Colors.purpleAccent],
+            colors: [Colors.white,Colors.deepPurple],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -165,7 +165,7 @@ class _PaymentGatewayScreenState extends State<PaymentGatewayScreen> {
                         },
                         child: Text(
                           'Pay Now',
-                          style: TextStyle(fontSize: 18),
+                          style: TextStyle(fontSize: 18,color: Colors.white),
                         ),
                       ),
                     ],

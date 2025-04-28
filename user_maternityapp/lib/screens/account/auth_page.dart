@@ -275,6 +275,7 @@ class _RegisterFormState extends State<RegisterForm> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
   final TextEditingController _passController = TextEditingController();
   final TextEditingController _cpassController = TextEditingController();
   final TextEditingController _contactController = TextEditingController();
@@ -301,6 +302,7 @@ class _RegisterFormState extends State<RegisterForm> {
         'user_email': _emailController.text,
         'user_password': _passController.text,
         'user_contact': _contactController.text,
+        'user_address': _addressController.text,
         'user_dob': _dobController.text,
       });
       _nameController.clear();
@@ -373,6 +375,13 @@ class _RegisterFormState extends State<RegisterForm> {
                   icon: Icons.email_outlined,
                   validator: (p0) => FormValidation.validateEmail(p0),
                   controller: _emailController,
+                ),
+                const SizedBox(height: 15),
+                _buildTextField(
+                  label: 'Address',
+                  icon: Icons.location_on_outlined,
+                  validator: (p0) => FormValidation.validateAddress(p0),
+                  controller: _addressController,
                 ),
                 const SizedBox(height: 15),
                 _buildTextField(

@@ -49,7 +49,7 @@ class _ManageRejectedShopState extends State<ManageRejectedShop> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Manage New Shops"),
+        title: Text("Manage Rejected Shops"),
         backgroundColor: Color.fromARGB(255, 182, 152, 251),
       ),
       body: isLoading

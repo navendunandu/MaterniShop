@@ -117,7 +117,9 @@ class _OrdersPageState extends State<OrdersPage> {
                         );
                       },
                       child: Container(
-                        margin: EdgeInsets.only(bottom: 16), // Note: 'bottom' might be intended here
+                        margin: EdgeInsets.only(
+                            bottom:
+                                16), // Note: 'bottom' might be intended here
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(16),

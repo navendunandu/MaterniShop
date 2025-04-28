@@ -95,6 +95,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       );
 
       if (response.user == null) {
+        
+      
         throw Exception('Current password is incorrect');
       }
 

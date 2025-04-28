@@ -16,7 +16,30 @@ class _ManageDietplanState extends State<ManageDietplan> {
   final TextEditingController _dinnerController = TextEditingController();
   final TextEditingController _monthController = TextEditingController();
   String? selectedTrimester;
-  void insert() async {
+  List<Map<String, dynamic>> _dietplans = [];
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchDietplans();
+  }
+
+  Future<void> fetchDietplans() async {
+    setState(() => _isLoading = true);
+    try {
+      final data = await supabase.from("tbl_dietplan").select();
+      setState(() {
+        _dietplans = List<Map<String, dynamic>>.from(data);
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      print("Error fetching dietplans: $e");
+    }
+  }
+
+  Future<void> insert() async {
     try {
       await supabase.from("tbl_dietplan").insert({
         'dietplan_title': _titleController.text,
@@ -32,15 +55,84 @@ class _ManageDietplanState extends State<ManageDietplan> {
       _lunchController.clear();
       _dinnerController.clear();
       _monthController.clear();
+      selectedTrimester = null;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Dietplan Added Successfully!"),
           backgroundColor: Colors.green,
         ),
       );
+      fetchDietplans();
     } catch (e) {
       print("Error Inserting Dietplan: $e");
     }
+  }
+
+  Future<void> deleteDietplan(int id) async {
+    await supabase.from("tbl_dietplan").delete().eq('dietplan_id', id);
+    fetchDietplans();
+  }
+
+  void showEditDialog(Map<String, dynamic> dietplan) {
+    _titleController.text = dietplan['dietplan_title'] ?? '';
+    _descriptionController.text = dietplan['dietplan_description'] ?? '';
+    _breakfastController.text = dietplan['dietplan_breakfast'] ?? '';
+    _lunchController.text = dietplan['dietplan_lunch'] ?? '';
+    _dinnerController.text = dietplan['dietplan_dinner'] ?? '';
+    selectedTrimester = dietplan['dietplan_month']?.toString();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Edit Dietplan"),
+        content: SingleChildScrollView(
+          child: Column(
+            children: [
+              buildInputField("Title", _titleController),
+              buildInputField("Description", _descriptionController, maxLines: 3),
+              buildInputField("Breakfast", _breakfastController),
+              buildInputField("Lunch", _lunchController),
+              buildInputField("Dinner", _dinnerController),
+              DropdownButtonFormField(
+                value: selectedTrimester,
+                decoration: InputDecoration(labelText: "Select Trimester"),
+                items: [
+                  DropdownMenuItem(value: "1", child: Text("First Trimester")),
+                  DropdownMenuItem(value: "2", child: Text("Second Trimester")),
+                  DropdownMenuItem(value: "3", child: Text("Third Trimester")),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    selectedTrimester = value.toString();
+                  });
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              await supabase.from("tbl_dietplan").update({
+                'dietplan_title': _titleController.text,
+                'dietplan_description': _descriptionController.text,
+                'dietplan_breakfast': _breakfastController.text,
+                'dietplan_lunch': _lunchController.text,
+                'dietplan_dinner': _dinnerController.text,
+                'dietplan_month': selectedTrimester,
+              }).eq('dietplan_id', dietplan['dietplan_id']);
+              Navigator.pop(context);
+              fetchDietplans();
+            },
+            child: Text("Update"),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -114,6 +206,49 @@ class _ManageDietplanState extends State<ManageDietplan> {
               ),
             ),
           ),
+
+          SizedBox(height: 30),
+          Text(
+            "Dietplan List",
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.purple.shade800,
+            ),
+          ),
+          _isLoading
+              ? Center(child: CircularProgressIndicator())
+              : _dietplans.isEmpty
+                  ? Text("No dietplans found.")
+                  : ListView.builder(
+                      shrinkWrap: true,
+                      physics: NeverScrollableScrollPhysics(),
+                      itemCount: _dietplans.length,
+                      itemBuilder: (context, index) {
+                        final plan = _dietplans[index];
+                        return Card(
+                          margin: EdgeInsets.symmetric(vertical: 8),
+                          child: ListTile(
+                            title: Text(plan['dietplan_title'] ?? ''),
+                            subtitle: Text(
+                                "Description: ${plan['dietplan_description']}\nBreakfast: ${plan['dietplan_breakfast']}\nLunch: ${plan['dietplan_lunch']}\nDinner: ${plan['dietplan_dinner']}\nTrimester: ${plan['dietplan_month']}"),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: Icon(Icons.edit, color: Color.fromARGB(255, 160, 141, 247)),
+                                  onPressed: () => showEditDialog(plan),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline_rounded, color: Color.fromARGB(255, 160, 141, 247)),
+                                  onPressed: () => deleteDietplan(plan['dietplan_id']),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
         ],
       ),
     );

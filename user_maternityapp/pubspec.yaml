@@ -32,6 +32,8 @@ dependencies:
   pdf: ^3.11.3
   path_provider: ^2.1.5
   open_file: ^3.5.10
+  razorpay_flutter: ^1.4.0
+  fluttertoast: ^8.2.12
 
 dev_dependencies:
   flutter_test:

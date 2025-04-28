@@ -90,7 +90,6 @@ class _ManageVerifiedShopState extends State<ManageVerifiedShop> {
                                  style: TextStyle(fontSize: 16,
                                 fontWeight: FontWeight.bold, color: Colors.white)),
                               ),
-                             
                             ],
                           ),
                         ],

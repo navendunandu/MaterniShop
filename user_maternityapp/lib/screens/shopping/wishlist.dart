@@ -30,7 +30,7 @@ class _WishlistState extends State<Wishlist> {
 
   Future<void> fetchItems() async {
     try {
-      final response = await supabase.from('tbl_wishlist').select("*,tbl_product(*,tbl_subcategory(*,tbl_category(*)))");
+      final response = await supabase.from('tbl_wishlist').select("*,tbl_product(*,tbl_subcategory(*,tbl_category(*)))").eq('user_id', supabase.auth.currentUser!.id).order('created_at', ascending: false);
       print(response);
       List<Map<String, dynamic>> products = [];
       for (var items in response){

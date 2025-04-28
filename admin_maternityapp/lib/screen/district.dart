@@ -13,20 +13,39 @@ class _ManageDistrictState extends State<ManageDistrict> {
   List<Map<String, dynamic>> districts = [];
   int eid = 0;
 
-  Future<void> insert() async {
-    try {
-      await supabase.from("tbl_district").insert({
-        'district_name': _districtController.text,
-      });
-      _districtController.clear();
-      fetchData();
+Future<void> insert() async {
+  try {
+    String districtName = _districtController.text.trim();
+
+    // Check if district already exists
+    final existingDistricts = await supabase
+        .from("tbl_district")
+        .select("district_name")
+        .eq("district_name", districtName);
+
+    if (existingDistricts.isNotEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("District Added Successfully")),
+        const SnackBar(content: Text("District already exists!")),
       );
-    } catch (e) {
-      print("Error Inserting District: $e");
+      return;
     }
+
+    // Insert new district
+    await supabase.from("tbl_district").insert({
+      'district_name': districtName,
+    });
+
+    _districtController.clear();
+    fetchData();
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("District Added Successfully")),
+    );
+  } catch (e) {
+    print("Error Inserting District: $e");
   }
+}
+
 
   Future<void> fetchData() async {
     try {

@@ -8,10 +8,13 @@ environment:
 
 dependencies:
   file_picker: ^9.0.2
+  fl_chart: ^0.70.2
   flutter:
     sdk: flutter
+  google_fonts: ^6.2.1
   intl: ^0.20.2
   supabase_flutter: ^2.8.3
+  video_player: ^2.9.5
 
 dev_dependencies:
   flutter_test:

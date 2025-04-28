@@ -347,8 +347,118 @@ class _ViewpostState extends State<Viewpost> {
                                       IconButton(
                                         icon: Icon(Icons.more_horiz,
                                             color: Colors.grey[600]),
-                                        onPressed: () {
-                                          // Show options menu
+                                        onPressed: () async {
+                                          final currentUserId = supabase
+                                              .auth.currentUser!.id;
+                                          final isOwner =
+                                              post['tbl_user']['id'] ==
+                                                  currentUserId;
+                                          showModalBottomSheet(
+                                            context: context,
+                                            builder: (context) => SafeArea(
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  if (isOwner)
+                                                    ListTile(
+                                                      leading: Icon(Icons.delete,
+                                                          color: Colors.red),
+                                                      title: Text('Delete Post',
+                                                          style: TextStyle(
+                                                              color:
+                                                                  Colors.red)),
+                                                      onTap: () async {
+                                                        Navigator.pop(
+                                                            context); // Close the sheet
+                                                        final confirm =
+                                                            await showDialog<
+                                                                bool>(
+                                                          context: context,
+                                                          builder: (context) =>
+                                                              AlertDialog(
+                                                            title: Text(
+                                                                'Delete Post'),
+                                                            content: Text(
+                                                                'Are you sure you want to delete this post?'),
+                                                            actions: [
+                                                              TextButton(
+                                                                onPressed: () =>
+                                                                    Navigator.pop(
+                                                                        context,
+                                                                        false),
+                                                                child: Text(
+                                                                    'Cancel'),
+                                                              ),
+                                                              TextButton(
+                                                                onPressed: () =>
+                                                                    Navigator.pop(
+                                                                        context,
+                                                                        true),
+                                                                child: Text(
+                                                                    'Delete',
+                                                                    style: TextStyle(
+                                                                        color: Colors
+                                                                            .red)),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        );
+                                                        if (confirm == true) {
+                                                          try {
+                                                            await supabase.from('tbl_like')
+                                                                .delete()
+                                                                .eq(
+                                                                    'post_id',
+                                                                    post[
+                                                                        'post_id']);
+                                                            await supabase.from('tbl_comment')
+                                                                .delete()
+                                                                .eq(
+                                                                    'post_id',
+                                                                    post[
+                                                                        'post_id']);
+                                                            await supabase
+                                                                .from(
+                                                                    'tbl_post')
+                                                                .delete()
+                                                                .eq(
+                                                                    'post_id',
+                                                                    post[
+                                                                        'post_id']);
+                                                            await fetchPosts();
+                                                            if (mounted) {
+                                                              ScaffoldMessenger
+                                                                      .of(context)
+                                                                  .showSnackBar(
+                                                                SnackBar(
+                                                                    content: Text(
+                                                                        'Post deleted')),
+                                                              );
+                                                            }
+                                                          } catch (e) {
+                                                            if (mounted) {
+                                                              ScaffoldMessenger
+                                                                      .of(context)
+                                                                  .showSnackBar(
+                                                                SnackBar(
+                                                                    content: Text(
+                                                                        'Failed to delete post')),
+                                                              );
+                                                            }
+                                                          }
+                                                        }
+                                                      },
+                                                    ),
+                                                  ListTile(
+                                                    leading: Icon(Icons.close),
+                                                    title: Text('Close'),
+                                                    onTap: () =>
+                                                        Navigator.pop(context),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          );
                                         },
                                       ),
                                     ],

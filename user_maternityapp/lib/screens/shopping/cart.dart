@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:user_maternityapp/main.dart';
 import 'package:user_maternityapp/screens/shopping/my_order.dart';
-import 'package:user_maternityapp/screens/payment/payment.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
 
 class CartPage extends StatefulWidget {
   const CartPage({super.key});
@@ -10,14 +11,110 @@ class CartPage extends StatefulWidget {
   _CartPageState createState() => _CartPageState();
 }
 
-class _CartPageState extends State<CartPage> {
+class _CartPageState extends State<CartPage> with SingleTickerProviderStateMixin  {
   List<Map<String, dynamic>> cartItems = [];
   bool isLoading = true;
+
+  late Razorpay _razorpay;
 
   @override
   void initState() {
     super.initState();
     fetchCartItems();
+    _razorpay = Razorpay();
+   
+    
+    // Event Listeners
+    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
+    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
+    _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
+  }
+
+int? bookingId;
+int? bookingAmt;
+
+  void _openCheckout(int total, int id) {
+    setState(() {
+      bookingId = id;
+      bookingAmt = total;
+    });
+    var options = {
+      'key': 'rzp_test_31UbYA8dUUi4m0',
+      'amount': total*100, 
+      'name': 'Maternity App',
+      'description': 'Payment',
+      'prefill': {
+        'contact': '8606540112',
+        'email': 'test@razorpay.com',
+      },
+      'theme': {'color': '#00245E'}
+    };
+
+    try {
+      _razorpay.open(options);
+    } catch (e) {
+      debugPrint('Error in payment: $e');
+    }
+  }
+
+      
+
+  void _handlePaymentSuccess(PaymentSuccessResponse response) async {
+  try {
+
+   await supabase
+          .from('tbl_cart')
+          .update({'cart_status': 1}).eq('booking_id', bookingId!);
+      await supabase
+          .from('tbl_booking')
+          .update({'booking_status': 1, 'booking_amount': bookingAmt!}).eq('id', bookingId!);
+
+    Fluttertoast.showToast(
+      msg: 'Payment Successful! Status Updated.',
+      toastLength: Toast.LENGTH_LONG,
+      gravity: ToastGravity.CENTER,
+      backgroundColor: Colors.green,
+      textColor: Colors.white,
+    );
+
+    Navigator.pop(context); // Go back to MyBookings after success
+  } catch (e) {
+    Fluttertoast.showToast(
+      msg: '❌ Error updating status in Supabase: $e',
+      toastLength: Toast.LENGTH_LONG,
+      gravity: ToastGravity.CENTER,
+      backgroundColor: Colors.red,
+      textColor: Colors.white,
+    );
+  }
+}
+
+
+  void _handlePaymentError(PaymentFailureResponse response) {
+    print('Error: ${response.code} - ${response.message}');
+    Fluttertoast.showToast(
+      msg: 'Payment Failed',
+      toastLength: Toast.LENGTH_LONG,
+      gravity: ToastGravity.CENTER,
+      backgroundColor: Colors.red,
+      textColor: Colors.white,
+    );
+  }
+
+  void _handleExternalWallet(ExternalWalletResponse response) {
+    Fluttertoast.showToast(
+      msg: 'External Wallet Selected: ${response.walletName}',
+      toastLength: Toast.LENGTH_LONG,
+      gravity: ToastGravity.CENTER,
+      backgroundColor: Colors.orange,
+      textColor: Colors.white,
+    );
+  }
+
+  @override
+  void dispose() {
+    _razorpay.clear();
+    super.dispose();
   }
 
   int? bid;
@@ -417,12 +514,7 @@ class _CartPageState extends State<CartPage> {
                               child: ElevatedButton(
                                 onPressed: cartItems.isEmpty ? null : () {
                                   int total = getTotalPrice().toInt();
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => PaymentGatewayScreen(id: bid!, amt: total, ),
-                                    ),
-                                  );
+                                  _openCheckout(total, bid!);
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Color(0xFF64B5F6),

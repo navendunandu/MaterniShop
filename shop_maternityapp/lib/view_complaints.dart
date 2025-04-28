@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shop_maternityapp/shop_complaints.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ComplaintsPage extends StatefulWidget {
   const ComplaintsPage({super.key});
@@ -9,91 +11,122 @@ class ComplaintsPage extends StatefulWidget {
 }
 
 class _ComplaintsPageState extends State<ComplaintsPage> {
-  final List<Map<String, dynamic>> _complaints = [
-    {
-      'id': '1',
-      'customerName': 'Emma Johnson',
-      'subject': 'Product Quality Issue',
-      'message': 'The maternity dress I purchased has a tear in the seam. I would like a replacement or refund.',
-      'date': '2025-03-01',
-      'status': 'New',
-      'priority': 'High',
-      'email': 'emma.j@example.com',
-      'phone': '+1 (555) 123-4567',
-      'orderNumber': 'ORD-2025-001',
-    },
-    {
-      'id': '2',
-      'customerName': 'Sophia Williams',
-      'subject': 'Late Delivery',
-      'message': 'My order was supposed to arrive on February 25th but I still haven\'t received it. Please provide an update.',
-      'date': '2025-02-28',
-      'status': 'In Progress',
-      'priority': 'Medium',
-      'email': 'sophia.w@example.com',
-      'phone': '+1 (555) 234-5678',
-      'orderNumber': 'ORD-2025-042',
-    },
-    {
-      'id': '3',
-      'customerName': 'Olivia Brown',
-      'subject': 'Wrong Size Delivered',
-      'message': 'I ordered a medium maternity support belt but received a small one. I need the correct size as soon as possible.',
-      'date': '2025-02-26',
-      'status': 'Resolved',
-      'priority': 'Medium',
-      'email': 'olivia.b@example.com',
-      'phone': '+1 (555) 345-6789',
-      'orderNumber': 'ORD-2025-036',
-    },
-    {
-      'id': '4',
-      'customerName': 'Ava Miller',
-      'subject': 'Billing Issue',
-      'message': 'I was charged twice for my recent order. Please refund the duplicate charge.',
-      'date': '2025-02-25',
-      'status': 'New',
-      'priority': 'High',
-      'email': 'ava.m@example.com',
-      'phone': '+1 (555) 456-7890',
-      'orderNumber': 'ORD-2025-029',
-    },
-  ];
-  
+  late Future<List<Map<String, dynamic>>> _complaintsFuture;
+  final SupabaseClient supabase = Supabase.instance.client;
   String _searchQuery = '';
   String _statusFilter = 'All';
-  
-  List<Map<String, dynamic>> get _filteredComplaints {
-    return _complaints.where((complaint) {
-      final matchesSearch = complaint['customerName'].toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          complaint['subject'].toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          complaint['message'].toLowerCase().contains(_searchQuery.toLowerCase());
-      final matchesStatus = _statusFilter == 'All' || complaint['status'] == _statusFilter;
+
+  @override
+  void initState() {
+    super.initState();
+    _complaintsFuture = _fetchComplaints();
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchComplaints() async {
+    try {
+      final response = await supabase
+          .from('tbl_complaint')
+          .select('''
+            complaint_id,
+            created_at,
+            complaint_title,
+            complaint_content,
+            complaint_status,
+            complaint_reply,
+            tbl_user!inner(user_name, user_email, user_contact),
+            tbl_product!inner(product_id, product_name, shop_id)
+          ''')
+          .eq('tbl_product.shop_id', supabase.auth.currentUser!.id)
+          .order('created_at', ascending: false);
+
+      return (response as List).map((complaint) {
+        return {
+          'id': complaint['complaint_id'].toString(),
+          'customerName': complaint['tbl_user']['user_name'],
+          'subject': complaint['complaint_title'],
+          'message': complaint['complaint_content'],
+          'date': complaint['created_at'].toString().split(' ')[0],
+          'status': _mapStatus(complaint['complaint_status']),
+          'reply': complaint['complaint_reply'] ?? '',
+          'priority': 'Medium',
+          'email': complaint['tbl_user']['user_email'],
+          'phone': complaint['tbl_user']['user_contact'],
+          'orderNumber': 'PROD-${complaint['tbl_product']['product_id']}',
+        };
+      }).toList();
+    } catch (e) {
+      print('Error fetching complaints: $e');
+      return [];
+    }
+  }
+
+  String _mapStatus(int status) {
+    switch (status) {
+      case 0:
+        return 'New';
+      case 1:
+        return 'In Progress';
+      case 2:
+        return 'Resolved';
+      default:
+        return 'Unknown';
+    }
+  }
+
+  List<Map<String, dynamic>> _filterComplaints(
+      List<Map<String, dynamic>> complaints) {
+    return complaints.where((complaint) {
+      final matchesSearch = complaint['customerName']
+              .toLowerCase()
+              .contains(_searchQuery.toLowerCase()) ||
+          complaint['subject']
+              .toLowerCase()
+              .contains(_searchQuery.toLowerCase()) ||
+          complaint['message']
+              .toLowerCase()
+              .contains(_searchQuery.toLowerCase());
+      final matchesStatus =
+          _statusFilter == 'All' || complaint['status'] == _statusFilter;
       return matchesSearch && matchesStatus;
     }).toList();
   }
-  
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Color.fromARGB(255, 245, 245, 250),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
+    return Padding(
+      padding: const EdgeInsets.all(20.0),
+      child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
-            Text(
-              "Customer Complaints",
-              style: GoogleFonts.sanchez(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Customer Complaints",
+                  style: GoogleFonts.sanchez(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => ShopComplaintsPage()),
+                    );
+                  },
+                  icon: Icon(Icons.feedback_outlined),
+                  label: Text("Site Feedback"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color.fromARGB(255, 198, 176, 249),
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ],
             ),
-            SizedBox(height: 20),
-            
-            // Search and Filter
+            const SizedBox(height: 20),
             Row(
               children: [
                 Expanded(
@@ -105,17 +138,17 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
                     },
                     decoration: InputDecoration(
                       hintText: "Search complaints...",
-                      prefixIcon: Icon(Icons.search),
+                      prefixIcon: const Icon(Icons.search),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      contentPadding: EdgeInsets.symmetric(vertical: 10),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 10),
                     ),
                   ),
                 ),
-                SizedBox(width: 20),
+                const SizedBox(width: 20),
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.grey.shade300),
                     borderRadius: BorderRadius.circular(10),
@@ -134,94 +167,106 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
                           _statusFilter = value!;
                         });
                       },
-                      hint: Text("Status"),
+                      hint: const Text("Status"),
                     ),
                   ),
                 ),
               ],
             ),
-            SizedBox(height: 20),
-            
-            // Stats Cards
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard(
-                    title: "Total Complaints",
-                    value: _complaints.length.toString(),
-                    icon: Icons.comment,
-                    color: Colors.blue,
-                  ),
-                ),
-                SizedBox(width: 20),
-                Expanded(
-                  child: _buildStatCard(
-                    title: "New",
-                    value: _complaints.where((c) => c['status'] == 'New').length.toString(),
-                    icon: Icons.fiber_new,
-                    color: Colors.red,
-                  ),
-                ),
-                SizedBox(width: 20),
-                Expanded(
-                  child: _buildStatCard(
-                    title: "In Progress",
-                    value: _complaints.where((c) => c['status'] == 'In Progress').length.toString(),
-                    icon: Icons.pending_actions,
-                    color: Colors.orange,
-                  ),
-                ),
-                SizedBox(width: 20),
-                Expanded(
-                  child: _buildStatCard(
-                    title: "Resolved",
-                    value: _complaints.where((c) => c['status'] == 'Resolved').length.toString(),
-                    icon: Icons.check_circle,
-                    color: Colors.green,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 20),
-            
-            // Complaints List
-            Expanded(
-              child: _filteredComplaints.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.inbox,
-                            size: 60,
-                            color: Colors.grey[400],
+            const SizedBox(height: 20),
+            FutureBuilder<List<Map<String, dynamic>>>(
+              future: _complaintsFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return const Center(child: Text("Error loading complaints"));
+                }
+                final complaints = snapshot.data ?? [];
+                final filteredComplaints = _filterComplaints(complaints);
+
+                return Column(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildStatCard(
+                            title: "Total Complaints",
+                            value: complaints.length.toString(),
+                            icon: Icons.comment,
+                            color: Colors.blue,
                           ),
-                          SizedBox(height: 10),
-                          Text(
-                            "No complaints found",
-                            style: GoogleFonts.sanchez(
-                              fontSize: 16,
-                              color: Colors.grey[600],
+                        ),
+                        const SizedBox(width: 20),
+                        Expanded(
+                          child: _buildStatCard(
+                            title: "New",
+                            value: complaints
+                                .where((c) => c['status'] == 'New')
+                                .length
+                                .toString(),
+                            icon: Icons.fiber_new,
+                            color: Colors.red,
+                          ),
+                        ),
+                        const SizedBox(width: 20),
+                        Expanded(
+                          child: _buildStatCard(
+                            title: "Resolved",
+                            value: complaints
+                                .where((c) => c['status'] == 'Resolved')
+                                .length
+                                .toString(),
+                            icon: Icons.check_circle,
+                            color: Colors.green,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    filteredComplaints.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.inbox,
+                                  size: 60,
+                                  color: Colors.grey[400],
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  "No complaints found",
+                                  style: GoogleFonts.sanchez(
+                                    fontSize: 16,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
                             ),
+                          )
+                        : ListView.separated(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: filteredComplaints.length,
+                            separatorBuilder: (context, index) =>
+                                const SizedBox(height: 15),
+                            itemBuilder: (context, index) {
+                              final complaint = filteredComplaints[index];
+                              return _buildComplaintCard(complaint);
+                            },
                           ),
-                        ],
-                      ),
-                    )
-                  : ListView.separated(
-                      itemCount: _filteredComplaints.length,
-                      separatorBuilder: (context, index) => SizedBox(height: 15),
-                      itemBuilder: (context, index) {
-                        final complaint = _filteredComplaints[index];
-                        return _buildComplaintCard(complaint);
-                      },
-                    ),
+                  ],
+                );
+              },
             ),
           ],
         ),
       ),
     );
   }
-  
+
   Widget _buildStatCard({
     required String title,
     required String value,
@@ -229,7 +274,7 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
     required Color color,
   }) {
     return Container(
-      padding: EdgeInsets.all(20),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
@@ -238,14 +283,14 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
             color: Colors.grey.withOpacity(0.1),
             spreadRadius: 1,
             blurRadius: 5,
-            offset: Offset(0, 3),
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: Row(
         children: [
           Container(
-            padding: EdgeInsets.all(10),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: color.withOpacity(0.1),
               borderRadius: BorderRadius.circular(10),
@@ -256,7 +301,7 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
               size: 30,
             ),
           ),
-          SizedBox(width: 15),
+          const SizedBox(width: 15),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -267,7 +312,7 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
                   color: Colors.grey[600],
                 ),
               ),
-              SizedBox(height: 5),
+              const SizedBox(height: 5),
               Text(
                 value,
                 style: GoogleFonts.sanchez(
@@ -282,7 +327,7 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
       ),
     );
   }
-  
+
   Widget _buildComplaintCard(Map<String, dynamic> complaint) {
     Color statusColor;
     switch (complaint['status']) {
@@ -298,22 +343,7 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
       default:
         statusColor = Colors.grey;
     }
-    
-    Color priorityColor;
-    switch (complaint['priority']) {
-      case 'High':
-        priorityColor = Colors.red;
-        break;
-      case 'Medium':
-        priorityColor = Colors.orange;
-        break;
-      case 'Low':
-        priorityColor = Colors.green;
-        break;
-      default:
-        priorityColor = Colors.grey;
-    }
-    
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -323,13 +353,13 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
             color: Colors.grey.withOpacity(0.1),
             spreadRadius: 1,
             blurRadius: 5,
-            offset: Offset(0, 3),
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: ExpansionTile(
-        tilePadding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        childrenPadding: EdgeInsets.all(20),
+        tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        childrenPadding: const EdgeInsets.all(20),
         expandedCrossAxisAlignment: CrossAxisAlignment.start,
         title: Row(
           children: [
@@ -345,7 +375,7 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
                       color: Colors.black87,
                     ),
                   ),
-                  SizedBox(height: 5),
+                  const SizedBox(height: 5),
                   Text(
                     "From: ${complaint['customerName']}",
                     style: GoogleFonts.sanchez(
@@ -357,7 +387,7 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
               ),
             ),
             Container(
-              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
                 color: statusColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(10),
@@ -377,8 +407,8 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
           padding: const EdgeInsets.only(top: 8.0),
           child: Row(
             children: [
-              Icon(Icons.calendar_today, size: 14, color: Colors.grey[600]),
-              SizedBox(width: 5),
+              const Icon(Icons.calendar_today, size: 14, color: Colors.grey),
+              const SizedBox(width: 5),
               Text(
                 complaint['date'],
                 style: GoogleFonts.sanchez(
@@ -386,31 +416,13 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
                   color: Colors.grey[600],
                 ),
               ),
-              SizedBox(width: 15),
-              Icon(Icons.flag, size: 14, color: priorityColor),
-              SizedBox(width: 5),
-              Text(
-                "${complaint['priority']} Priority",
-                style: GoogleFonts.sanchez(
-                  fontSize: 12,
-                  color: priorityColor,
-                ),
-              ),
-              SizedBox(width: 15),
-              Icon(Icons.shopping_bag, size: 14, color: Colors.grey[600]),
-              SizedBox(width: 5),
-              Text(
-                complaint['orderNumber'],
-                style: GoogleFonts.sanchez(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
-              ),
+              const SizedBox(width: 15),
+              const Icon(Icons.shopping_bag, size: 14, color: Colors.grey),
             ],
           ),
         ),
         children: [
-          Divider(),
+          const Divider(),
           Text(
             "Message:",
             style: GoogleFonts.sanchez(
@@ -419,7 +431,7 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
               color: Colors.black87,
             ),
           ),
-          SizedBox(height: 5),
+          const SizedBox(height: 5),
           Text(
             complaint['message'],
             style: GoogleFonts.sanchez(
@@ -427,11 +439,31 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
               color: Colors.grey[700],
             ),
           ),
-          SizedBox(height: 15),
+          const SizedBox(height: 15),
+          if (complaint['reply'] != null && complaint['reply'].isNotEmpty) ...[
+            const Divider(),
+            Text(
+              "Reply:",
+              style: GoogleFonts.sanchez(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              complaint['reply'],
+              style: GoogleFonts.sanchez(
+                fontSize: 14,
+                color: Colors.grey[700],
+              ),
+            ),
+            const SizedBox(height: 15),
+          ],
           Row(
             children: [
-              Icon(Icons.email, size: 16, color: Colors.grey[600]),
-              SizedBox(width: 5),
+              const Icon(Icons.email, size: 16, color: Colors.grey),
+              const SizedBox(width: 5),
               Text(
                 complaint['email'],
                 style: GoogleFonts.sanchez(
@@ -439,9 +471,9 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
                   color: Colors.grey[700],
                 ),
               ),
-              SizedBox(width: 15),
-              Icon(Icons.phone, size: 16, color: Colors.grey[600]),
-              SizedBox(width: 5),
+              const SizedBox(width: 15),
+              const Icon(Icons.phone, size: 16, color: Colors.grey),
+              const SizedBox(width: 5),
               Text(
                 complaint['phone'],
                 style: GoogleFonts.sanchez(
@@ -451,83 +483,42 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
               ),
             ],
           ),
-          SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              if (complaint['status'] != 'Resolved') ...[
-                OutlinedButton.icon(
-                  onPressed: () {
-                    _updateComplaintStatus(complaint['id'], 'In Progress');
-                  },
-                  icon: Icon(Icons.pending_actions, size: 16),
-                  label: Text("Mark In Progress"),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.orange,
-                    side: BorderSide(color: Colors.orange),
-                    padding: EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-                  ),
-                ),
-                SizedBox(width: 10),
-                OutlinedButton.icon(
-                  onPressed: () {
-                    _updateComplaintStatus(complaint['id'], 'Resolved');
-                  },
-                  icon: Icon(Icons.check_circle, size: 16),
-                  label: Text("Mark Resolved"),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.green,
-                    side: BorderSide(color: Colors.green),
-                    padding: EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-                  ),
-                ),
-              ],
-              if (complaint['status'] == 'Resolved') ...[
-                OutlinedButton.icon(
-                  onPressed: () {
-                    _updateComplaintStatus(complaint['id'], 'New');
-                  },
-                  icon: Icon(Icons.refresh, size: 16),
-                  label: Text("Reopen"),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.blue,
-                    side: BorderSide(color: Colors.blue),
-                    padding: EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-                  ),
-                ),
-              ],
-              SizedBox(width: 10),
-              ElevatedButton.icon(
-                onPressed: () {
-                  _showReplyDialog(context, complaint);
-                },
-                icon: Icon(Icons.reply, size: 16),
-                label: Text("Reply"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Color.fromARGB(255, 198, 176, 249),
-                  foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-                ),
-              ),
-            ],
+          const SizedBox(height: 20),
+          ElevatedButton.icon(
+            onPressed: () {
+              _showReplyDialog(context, complaint);
+            },
+            icon: const Icon(Icons.reply, size: 16),
+            label: const Text("Reply"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color.fromARGB(255, 198, 176, 249),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+            ),
           ),
         ],
       ),
     );
   }
-  
-  void _updateComplaintStatus(String id, String newStatus) {
-    setState(() {
-      final index = _complaints.indexWhere((c) => c['id'] == id);
-      if (index != -1) {
-        _complaints[index]['status'] = newStatus;
-      }
-    });
+
+  Future<void> _updateComplaint(String id, String reply, int newStatus) async {
+    try {
+      await supabase.from('tbl_complaint').update({
+        'complaint_reply': reply,
+        'complaint_status': newStatus,
+        'complaint_replydate': DateTime.now().toIso8601String(),
+      }).eq('complaint_id', id);
+      setState(() {
+        _complaintsFuture = _fetchComplaints();
+      });
+    } catch (e) {
+      print('Error updating complaint: $e');
+    }
   }
-  
+
   void _showReplyDialog(BuildContext context, Map<String, dynamic> complaint) {
-    final _replyController = TextEditingController();
-    
+    final replyController = TextEditingController();
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -544,10 +535,10 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
                 color: Colors.black87,
               ),
             ),
-            SizedBox(height: 15),
+            const SizedBox(height: 15),
             TextField(
-              controller: _replyController,
-              decoration: InputDecoration(
+              controller: replyController,
+              decoration: const InputDecoration(
                 labelText: "Your Reply",
                 border: OutlineInputBorder(),
                 alignLabelWithHint: true,
@@ -559,33 +550,32 @@ class _ComplaintsPageState extends State<ComplaintsPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text("Cancel"),
+            child: const Text("Cancel"),
           ),
           ElevatedButton(
-            onPressed: () {
-              // Reply logic would go here
-              if (_replyController.text.isNotEmpty) {
-                // In a real app, this would send an email or notification
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text("Reply sent to ${complaint['customerName']}"),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-                
-                // Update status to In Progress if it's New
-                if (complaint['status'] == 'New') {
-                  _updateComplaintStatus(complaint['id'], 'In Progress');
+            onPressed: () async {
+              if (replyController.text.isNotEmpty) {
+                int newStatus = complaint['status'] == 'New' ? 1 : 2;
+                await _updateComplaint(
+                    complaint['id'], replyController.text, newStatus);
+
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content:
+                          Text("Reply sent to ${complaint['customerName']}"),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                  Navigator.pop(context);
                 }
-                
-                Navigator.pop(context);
               }
             },
-            child: Text("Send Reply"),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Color.fromARGB(255, 198, 176, 249),
+              backgroundColor: const Color.fromARGB(255, 198, 176, 249),
               foregroundColor: Colors.white,
             ),
+            child: const Text("Send Reply"),
           ),
         ],
       ),

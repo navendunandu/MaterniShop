@@ -18,7 +18,7 @@ class _ManageNewShopState extends State<ManageNewShop> {
 
   Future<void> fetchNewShop() async {
     try {
-      final response = await supabase.from("tbl_shop").select("*,tbl_place()");
+      final response = await supabase.from("tbl_shop").select("*,tbl_place()").eq('shop_vstatus', 0);
       print("Fetched NewShop Data: $response");
       setState(() {
         NewShopList = List<Map<String, dynamic>>.from(response);

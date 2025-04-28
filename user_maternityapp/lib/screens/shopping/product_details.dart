@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:user_maternityapp/screens/shopping/cart.dart';
 import 'package:user_maternityapp/service/cart_service.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 //import 'package:user/screen/cart.dart';
@@ -188,7 +189,7 @@ class _ProductPageState extends State<ProductPage> {
           IconButton(
             icon: Icon(Icons.shopping_cart_outlined),
             onPressed: () {
-              // Navigate to cart
+              Navigator.push(context, MaterialPageRoute(builder: (context) => CartPage()));
             },
           ),
         ],

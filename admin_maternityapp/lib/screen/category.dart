@@ -14,20 +14,40 @@ class _ManageCategoryState extends State<ManageCategory> {
   int eid = 0;
 
   Future<void> insert() async {
-    if (_categoryController.text.trim().isEmpty) return;
+  String categoryName = _categoryController.text.trim();
 
-    try {
-      await supabase.from("tbl_category").insert({
-        'category_name': _categoryController.text.trim(),
-      });
-      _categoryController.clear();
-      fetchData();
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text("Category added successfully")));
-    } catch (e) {
-      print("Error Inserting Category: $e");
+  if (categoryName.isEmpty) return;
+
+  try {
+    // Check if category already exists
+    final existingCategories = await supabase
+        .from("tbl_category")
+        .select("category_name")
+        .eq("category_name", categoryName);
+
+    if (existingCategories.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Category already exists!")),
+      );
+      return;
     }
+
+    // Insert new category
+    await supabase.from("tbl_category").insert({
+      'category_name': categoryName,
+    });
+
+    _categoryController.clear();
+    fetchData();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Category added successfully")),
+    );
+  } catch (e) {
+    print("Error Inserting Category: $e");
   }
+}
+
 
   Future<void> fetchData() async {
     try {

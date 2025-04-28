@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shop_maternityapp/main.dart';
-import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:path/path.dart' as path;
 import 'package:shop_maternityapp/product_details.dart'; // Import path package
 
 class ProductManagementPage extends StatefulWidget {
@@ -75,7 +73,9 @@ class _ProductManagementPageState extends State<ProductManagementPage> {
 
   Future<void> fetchProduct() async {
     try {
-      final response = await supabase.from('tbl_product').select("*, tbl_subcategory(*,tbl_category(*))");
+       final userId = supabase.auth.currentUser?.id;
+    if (userId == null) return;
+      final response = await supabase.from('tbl_product').select("*, tbl_subcategory(*,tbl_category(*))").eq('shop_id', userId);
       setState(() {
         _products = response;
       });
@@ -290,7 +290,7 @@ class _ProductManagementPageState extends State<ProductManagementPage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        '\$${product['product_price'].toStringAsFixed(2)}',
+                        'Rs ${product['product_price'].toStringAsFixed(2)}',
                         style: GoogleFonts.sanchez(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -399,7 +399,7 @@ class _ProductManagementPageState extends State<ProductManagementPage> {
                     TextFormField(
                       controller: priceController,
                       decoration: InputDecoration(
-                        labelText: "Price (\$)",
+                        labelText: "Price (Rs)",
                         border: OutlineInputBorder(),
                       ),
                       keyboardType: TextInputType.number,

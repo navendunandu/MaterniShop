@@ -1,11 +1,14 @@
+import 'package:admin_maternityapp/main.dart';
 import 'package:admin_maternityapp/screen/category.dart';
 import 'package:admin_maternityapp/screen/dashboard.dart';
 import 'package:admin_maternityapp/screen/district.dart';
+import 'package:admin_maternityapp/screen/login.dart';
 import 'package:admin_maternityapp/screen/manage_dietplan.dart';
 import 'package:admin_maternityapp/screen/manage_exercise.dart';
 import 'package:admin_maternityapp/screen/new_shops.dart';
 import 'package:admin_maternityapp/screen/place.dart';
 import 'package:admin_maternityapp/screen/rejected_shops.dart';
+import 'package:admin_maternityapp/screen/report.dart';
 import 'package:admin_maternityapp/screen/subcategory.dart';
 import 'package:admin_maternityapp/screen/verified_shops.dart';
 import 'package:admin_maternityapp/screen/viewcomplaint.dart';
@@ -24,20 +27,21 @@ class _HomepageState extends State<Homepage> {
   List<String> pageName = [
     'Dashboard', 'District', 'Category', 'Place', 'Sub Category',
     'Exercises', 'Diet Plan', 'New Shops', 'Verified Shops', 'Rejected Shops',
-    'Compalints'
+    'Compalints', 'Report'
   ];
 
   List<IconData> pageIcon = [
     Icons.dashboard_outlined, Icons.location_city_outlined, Icons.category_outlined,
     Icons.location_city, Icons.category_outlined, Icons.fitness_center_outlined,
     Icons.fastfood_outlined, Icons.store_outlined, Icons.store_mall_directory_outlined,
-    Icons.store_outlined,Icons.report_rounded, 
+    Icons.store_outlined, Icons.report_rounded, Icons.report_rounded,
   ];
 
   List<Widget> pages = [
-    Dashboard(), ManageDistrict(), ManageCategory(), ManagePlace(), 
-    ManageSubCategory(), ManageExercise(), ManageDietplan(), 
-    ManageNewShop(), ManageVerifiedShop(), ManageRejectedShop(),ComplaintScreen()
+    Dashboard(), ManageDistrict(), ManageCategory(), ManagePlace(),
+    ManageSubCategory(), ManageExercise(), ManageDietplan(),
+    ManageNewShop(), ManageVerifiedShop(), ManageRejectedShop(), ComplaintScreen(),
+    SalesReportPage()
   ];
 
   @override
@@ -48,6 +52,34 @@ class _HomepageState extends State<Homepage> {
           "Admin Dashboard",
           style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
+        actions: [
+          Padding(
+  padding: const EdgeInsets.all(8.0),
+  child: OutlinedButton.icon(
+    onPressed: () async {
+      await supabase.auth.signOut();
+
+      // Navigate to LoginScreen and remove all previous routes
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => Loginpage()),
+        (route) => false, // Removes all previous routes
+      );
+    },
+    label: const Text(
+      "Log out",
+      style: TextStyle(color: Colors.white),
+    ),
+    icon: const Icon(Icons.logout),
+    style: OutlinedButton.styleFrom(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+    ),
+  ),
+)
+
+        ],
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(

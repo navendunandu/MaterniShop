@@ -1,4 +1,5 @@
 import 'package:admin_maternityapp/main.dart';
+import 'package:admin_maternityapp/screen/homepage.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -12,26 +13,54 @@ class Loginpage extends StatefulWidget {
 class _LoginpageState extends State<Loginpage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passController = TextEditingController();
+
   Future<void> signin() async {
-    String email=_emailController.text;
-    String Password=_passController.text;
-  try {
-    final AuthResponse res = await supabase.auth.signInWithPassword(
-  email: email,
-  password: Password,
-);
- final User? user = res.user;
-      if (user != null) {
+    String email = _emailController.text.trim();
+    String password = _passController.text.trim();
+
+    try {
+      // Sign in with Supabase Auth
+      final AuthResponse res = await supabase.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+      final User? user = res.user;
+      if (user == null) {
+        throw Exception("User not found after sign-in");
+      }
+      String uid = user.id;
+      print("User ID from Auth: $uid");
+
+      // Check if the user is an admin by querying tbl_admin
+      final response = await supabase
+          .from("tbl_admin")
+          .select('id')
+          .eq("id", uid)
+          .count(CountOption.exact);
+      int count = response.count;
+      print("Count of matching admins: $count");
+
+      if (count > 0) {
+        // Navigate to the dashboard or home page
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const Loginpage()),
+          MaterialPageRoute(builder: (context) => Homepage()),
+        );
+      } else {
+        // Sign out the user if they are not an admin
+        await supabase.auth.signOut();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Invalid credentials")),
         );
       }
-print('signin successful');
-  } catch ($e) {
-    print('error during signin');
+    } catch (e) {
+      print('Error during signin: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Signin failed: $e")),
+      );
+    }
   }
-  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -94,9 +123,9 @@ print('signin successful');
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-              Color.fromARGB(255, 252, 88, 132),
-              Color.fromARGB(255, 223, 61, 196)
-            ],  // Gradient colors
+                          Color.fromARGB(255, 252, 88, 132),
+                          Color.fromARGB(255, 223, 61, 196)
+                        ], // Gradient colors
                         begin: Alignment.centerLeft,
                         end: Alignment.centerRight,
                       ),

@@ -16,20 +16,42 @@ class _ManagePlaceState extends State<ManagePlace> {
   int eid = 0;
 
   Future<void> insert() async {
-    try {
-      await supabase.from("tbl_place").insert({
-        'place_name': _placeController.text,
-        'district_id': selectedDistrict,
-      });
-      _placeController.clear();
-      fetchData();
+  String placeName = _placeController.text.trim();
+
+  if (placeName.isEmpty || selectedDistrict == null) return;
+
+  try {
+    // Check if place already exists in the selected district
+    final existingPlaces = await supabase
+        .from("tbl_place")
+        .select("place_name")
+        .eq("place_name", placeName)
+        .eq("district_id", selectedDistrict!);
+
+    if (existingPlaces.isNotEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Place Added Successfully")),
+        const SnackBar(content: Text("Place already exists in this district!")),
       );
-    } catch (e) {
-      print("Error Inserting Place: $e");
+      return;
     }
+
+    // Insert new place
+    await supabase.from("tbl_place").insert({
+      'place_name': placeName,
+      'district_id': selectedDistrict,
+    });
+
+    _placeController.clear();
+    fetchData();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Place Added Successfully")),
+    );
+  } catch (e) {
+    print("Error Inserting Place: $e");
   }
+}
+
 
   Future<void> fetchData() async {
     try {
@@ -185,6 +207,7 @@ class _ManagePlaceState extends State<ManagePlace> {
                             setState(() {
                               eid = data['id'];
                               _placeController.text = data['place_name'];
+                              selectedDistrict = data['district_id'].toString();
                             });
                           },
                           icon: const Icon(Icons.edit, color: Color.fromARGB(255, 160, 141, 247)),
